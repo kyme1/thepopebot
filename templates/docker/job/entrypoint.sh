@@ -83,6 +83,17 @@ $(cat /job/logs/${JOB_ID}/job.md)"
 
 LLM_PROVIDER="${LLM_PROVIDER:-anthropic}"
 
+# Validate custom provider configuration
+if [ "$LLM_PROVIDER" = "custom" ]; then
+    if [ -z "$OPENAI_BASE_URL" ] && [ ! -f "/job/.pi/agent/models.json" ]; then
+        echo "ERROR: LLM_PROVIDER is 'custom' but OPENAI_BASE_URL is not set and no custom models.json found in repo."
+        echo "For custom provider, you must set OPENAI_BASE_URL as a GitHub repository variable:"
+        echo "  npx thepopebot set-var OPENAI_BASE_URL <your_base_url>"
+        echo "Alternatively, provide a custom models.json at .pi/agent/models.json in your repository."
+        exit 1
+    fi
+fi
+
 MODEL_FLAGS="--provider $LLM_PROVIDER"
 if [ -n "$LLM_MODEL" ]; then
     MODEL_FLAGS="$MODEL_FLAGS --model $LLM_MODEL"
