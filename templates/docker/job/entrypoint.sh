@@ -94,6 +94,10 @@ if [ "$LLM_PROVIDER" = "custom" ]; then
     fi
 fi
 
+if [ "$LLM_PROVIDER" = "custom" ] && [ -z "$LLM_MODEL" ]; then
+    echo "WARNING: LLM_PROVIDER is 'custom' but LLM_MODEL is not set. Using provider default model."
+fi
+
 MODEL_FLAGS="--provider $LLM_PROVIDER"
 if [ -n "$LLM_MODEL" ]; then
     MODEL_FLAGS="$MODEL_FLAGS --model $LLM_MODEL"
@@ -105,7 +109,8 @@ if [ "$LLM_PROVIDER" = "custom" ] && [ -n "$OPENAI_BASE_URL" ]; then
     if [ -z "$CUSTOM_API_KEY" ]; then
         export CUSTOM_API_KEY="not-needed"
     fi
-    cat > /root/.pi/agent/models.json <<MODELS
+    if [ -n "$LLM_MODEL" ]; then
+        cat > /root/.pi/agent/models.json <<MODELS
 {
   "providers": {
     "custom": {
@@ -117,6 +122,19 @@ if [ "$LLM_PROVIDER" = "custom" ] && [ -n "$OPENAI_BASE_URL" ]; then
   }
 }
 MODELS
+    else
+        cat > /root/.pi/agent/models.json <<MODELS
+{
+  "providers": {
+    "custom": {
+      "baseUrl": "$OPENAI_BASE_URL",
+      "api": "openai-completions",
+      "apiKey": "CUSTOM_API_KEY"
+    }
+  }
+}
+MODELS
+    fi
 fi
 
 # Copy custom models.json to PI's global config if present in repo (overrides generated)
